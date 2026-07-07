@@ -38,8 +38,9 @@ flowchart LR
     subgraph Server["Express API (Render)"]
         Auth[Auth Routes — JWT]
         OAuth[OAuth Routes]
-        Posts[Post & Scheduler Routes]
-        AI[AI Routes]
+        Accounts[Account Routes]
+        Posts[Post, Scheduler & AI Routes]
+        Activity[Activity Routes]
         Cron[Cron Job — Auto Publish]
     end
 
@@ -50,19 +51,22 @@ flowchart LR
 
     UI --> Auth
     UI --> OAuth
+    UI --> Accounts
     UI --> Posts
-    UI --> AI
+    UI --> Activity
 
     Auth --> DB
     OAuth --> Zernio
+    Accounts --> DB
+    Accounts --> Zernio
     Posts --> DB
     Posts --> Zernio
-    AI --> Gemini
-    AI --> Leonardo
+    Posts --> Gemini
+    Posts --> Leonardo
+    Activity --> DB
     Cron --> DB
     Cron --> Zernio
 ```
-
 
 ---
 
@@ -148,15 +152,22 @@ social-scheduler/
 
 ## 🔌 API Overview
 
-> Core route groups — adjust exact paths to match your implementation.
+All routes are mounted under `/api` in `server.ts`. Every route below is protected by JWT (`protect` middleware) except registration and login.
 
-| Route Group | Example Endpoint | Purpose |
-|---|---|---|
-| Auth | `/api/auth/login`, `/api/auth/register` | User signup/login, issues JWT |
-| OAuth | `/api/oauth/:platform/url` | Generates the Zernio OAuth URL for a given platform |
-| Accounts | `/api/accounts` | List and manage connected social accounts |
-| Posts | `/api/posts`, `/api/posts/schedule` | Create, list, and schedule posts |
-| AI | `/api/ai/generate-text`, `/api/ai/generate-image` | Gemini caption generation, Leonardo.ai image generation |
+| Route Group | Method & Endpoint | Controller | Purpose |
+|---|---|---|---|
+| **Auth** (`/api/auth`) | `POST /register` | `registerUser` | Create a new user account |
+| | `POST /login` | `loginUser` | Authenticate and issue a JWT |
+| **OAuth** (`/api/oauth`) | `GET /:platform/url` | `generateAuthUrl` | Generates the Zernio OAuth URL for a given platform |
+| | `GET /sync` | `syncAccounts` | Syncs connected-account status from Zernio |
+| **Accounts** (`/api/accounts`) | `GET /` | `getAccounts` | List connected social accounts |
+| | `POST /` | `addAccount` | Register a newly connected account |
+| | `DELETE /:id` | `disconnectAccount` | Disconnect a social account |
+| **Posts** (`/api/posts`) | `GET /` | `getPosts` | List scheduled/published posts |
+| | `GET /generations` | `getGenerations` | List past AI generations |
+| | `POST /` | `schedulePosts` | Schedule a post (multipart upload via `multer`, field `media`) |
+| | `POST /generate` | `generatePost` | Generate an AI caption (Gemini) and optional image (Leonardo.ai) |
+| **Activity** (`/api/activity`) | `GET /` | `getActivity` | Recent activity feed for the dashboard |
 
 ---
 
