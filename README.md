@@ -6,15 +6,64 @@ Manage and automate your social media presence — connect accounts, schedule po
 
 ---
 
+## 📖 Overview
+
+Running a presence across multiple social platforms usually means juggling separate logins, reformatting the same content for each app, and remembering to actually hit "post" at the right time. **AI Social Media Scheduler** collapses all of that into one dashboard: connect your accounts once, compose a post for every platform at the same time, and — when you're out of ideas — let an AI assistant write the caption and generate an image for you.
+
+It's built end-to-end on the **MERN stack** (MongoDB, Express, React, Node.js). Google's **Gemini API** and **Leonardo.ai** power the content-generation side, while **Zernio** handles the hard part of social integrations — OAuth across platforms and the actual publishing — so the app never has to touch raw platform credentials directly.
+
+---
+
 ## ✨ Features
 
-- **Dashboard** — at-a-glance stats (scheduled/published posts, connected accounts) and a recent activity feed
-- **Multi-Platform Account Management** — connect X, LinkedIn, Facebook, and Instagram via secure OAuth
-- **Post Scheduler** — compose once, publish to multiple platforms, attach media, and pick a date/time
-- **AI Composer** — generate on-brand captions with a tone preset (Professional, Creative, Funny, Minimalist, Excited)
-- **AI Image Generation** — optionally generate accompanying visuals for a post
-- **Auto-Publishing** — a cron-based scheduler publishes posts automatically at the scheduled time
-- **JWT Authentication** — secure session handling across the app
+- **Dashboard** — at-a-glance stats (scheduled posts, published posts, connected accounts) plus a live activity feed of what's gone out recently
+- **Multi-Platform Account Management** — connect X, LinkedIn, Facebook, and Instagram via secure OAuth, with per-platform connection status at a glance
+- **Post Scheduler** — compose once, select any combination of connected platforms, attach media, and pick an exact date and time to publish
+- **AI Composer** — describe what you want in plain language and generate an on-brand caption with hashtags, in one of five tones: Professional, Creative, Funny, Minimalist, or Excited
+- **AI Image Generation** — flip a toggle in the AI Composer to generate an accompanying image alongside the caption
+- **Seamless Handoff** — AI-generated content flows straight into the scheduler, so a generation can be assigned platforms and a send time without leaving the flow
+- **Auto-Publishing** — a cron-based job on the backend checks for due posts and publishes them automatically, no manual step required
+- **JWT Authentication** — stateless, token-based session handling protects all account and posting routes
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart LR
+    subgraph Client["React Client (Vercel)"]
+        UI[Dashboard / Accounts / Scheduler / AI Composer]
+    end
+
+    subgraph Server["Express API (Render)"]
+        Auth[Auth Routes — JWT]
+        OAuth[OAuth Routes]
+        Posts[Post & Scheduler Routes]
+        AI[AI Routes]
+        Cron[Cron Job — Auto Publish]
+    end
+
+    DB[(MongoDB Atlas)]
+    Zernio[Zernio API]
+    Gemini[Google Gemini API]
+    Leonardo[Leonardo.ai API]
+
+    UI --> Auth
+    UI --> OAuth
+    UI --> Posts
+    UI --> AI
+
+    Auth --> DB
+    OAuth --> Zernio
+    Posts --> DB
+    Posts --> Zernio
+    AI --> Gemini
+    AI --> Leonardo
+    Cron --> DB
+    Cron --> Zernio
+```
+
+*(Renders natively on GitHub.)*
 
 ---
 
@@ -29,6 +78,43 @@ Manage and automate your social media presence — connect accounts, schedule po
 | AI Text Generation | Google **Gemini API** |
 | AI Image Generation | **Leonardo.ai** |
 | Auth | JWT |
+| Automation | Cron-based scheduled job for auto-publishing |
+
+---
+
+## 📁 Project Structure
+
+```
+social-scheduler/
+├── client/                     # React frontend (Vite + TypeScript)
+│   ├── node_modules/
+│   ├── public/
+│   ├── src/
+│   ├── .env
+│   ├── .gitignore
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── tsconfig.app.json
+│   ├── tsconfig.json
+│   ├── tsconfig.node.json
+│   ├── vercel.json
+│   └── vite.config.ts
+└── server/                     # Express backend (TypeScript)
+    ├── config/
+    ├── controllers/
+    ├── middlewares/
+    ├── models/
+    ├── node_modules/
+    ├── routes/
+    ├── services/
+    ├── .env
+    ├── package.json
+    ├── package-lock.json
+    ├── server.ts
+    └── tsconfig.json
+```
 
 ---
 
@@ -57,7 +143,29 @@ Manage and automate your social media presence — connect accounts, schedule po
 2. **Create** a post manually in the Scheduler, or head to **AI Composer** — describe what you want, pick a tone, and optionally generate an image.
 3. **Schedule** the post for one or more platforms at your chosen date and time.
 4. A **cron job** on the backend automatically publishes the post via Zernio when it's due.
-5. Track results back on the **Dashboard**.
+5. **Track** results back on the Dashboard's activity feed.
+
+---
+
+## 🔌 API Overview
+
+> Core route groups — adjust exact paths to match your implementation.
+
+| Route Group | Example Endpoint | Purpose |
+|---|---|---|
+| Auth | `/api/auth/login`, `/api/auth/register` | User signup/login, issues JWT |
+| OAuth | `/api/oauth/:platform/url` | Generates the Zernio OAuth URL for a given platform |
+| Accounts | `/api/accounts` | List and manage connected social accounts |
+| Posts | `/api/posts`, `/api/posts/schedule` | Create, list, and schedule posts |
+| AI | `/api/ai/generate-text`, `/api/ai/generate-image` | Gemini caption generation, Leonardo.ai image generation |
+
+---
+
+## 🔐 Security Notes
+
+- JWTs are issued on login and required on all protected routes via an `Authorization` header
+- Zernio holds custody of platform OAuth tokens, so raw social-platform credentials never touch this app's own database
+- All third-party API keys (Zernio, Gemini, Leonardo.ai) live server-side only and are never exposed in the client bundle
 
 ---
 
@@ -87,7 +195,7 @@ LEONARDO_API_KEY=your_leonardo_api_key
 ```
 
 ```bash
-npm run dev
+npm run server
 ```
 
 ### Frontend Setup
@@ -105,5 +213,24 @@ VITE_API_URL=http://localhost:5000
 npm run dev
 ```
 
+---
+
+## 🗺️ Roadmap
+
+- [ ] Analytics on published post performance
+- [ ] Support for more platforms (TikTok, YouTube, Threads)
+- [ ] Team / multi-user workspace support
+- [ ] Bulk scheduling via CSV upload
+- [ ] Post-performance-based AI tone suggestions
+
+---
+
+## 🙏 Acknowledgments
+
+- [Zernio](https://zernio.com) — unified social media API
+- [Google Gemini](https://ai.google.dev/) — AI text generation
+- [Leonardo.ai](https://leonardo.ai) — AI image generation
+
+---
 
 *Built by Arijit Roy*
