@@ -106,10 +106,4 @@ npm run dev
 ```
 
 
-## 📄 License
-
-MIT
-
----
-
 *Built by Arijit Roy*
