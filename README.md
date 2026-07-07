@@ -63,7 +63,6 @@ flowchart LR
     Cron --> Zernio
 ```
 
-*(Renders natively on GitHub.)*
 
 ---
 
