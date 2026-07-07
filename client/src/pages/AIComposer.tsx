@@ -29,6 +29,10 @@ const AIComposer = () => {
   }
 
   useEffect(() => {
+    toast("Note: Image generation may be temporarily unavailable due to API usage limits.")
+  }, [])
+
+  useEffect(() => {
     fetchGeneratrions();
   }, [])
 
